@@ -1,0 +1,1 @@
+export 'metodo_card.dart';
