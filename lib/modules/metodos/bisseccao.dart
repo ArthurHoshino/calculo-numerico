@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:function_tree/function_tree.dart';
 
 /// Armazena os dados de uma única linha da tabela (uma iteração)
-class IterationStep {
+class PassoIteracao {
   final int k;
   final double a;
   final double b;
@@ -11,7 +11,7 @@ class IterationStep {
   final double fxk;
   final double error;
 
-  IterationStep({
+  PassoIteracao({
     required this.k,
     required this.a,
     required this.b,
@@ -29,7 +29,7 @@ class IterationStep {
 class RootResult {
   final int id;
   final double finalRoot;
-  final List<IterationStep> steps;
+  final List<PassoIteracao> steps;
 
   RootResult({required this.id, required this.finalRoot, required this.steps});
 }
@@ -101,7 +101,7 @@ class _BisseccaoViewState extends State<BisseccaoView> {
       for (int i = 0; i < intervals.length; i++) {
         double a = intervals[i][0];
         double b = intervals[i][1];
-        List<IterationStep> steps = [];
+        List<PassoIteracao> steps = [];
 
         int k = 0;
         double error = double.infinity;
@@ -116,7 +116,7 @@ class _BisseccaoViewState extends State<BisseccaoView> {
 
           error = (b - a).abs();
 
-          steps.add(IterationStep(
+          steps.add(PassoIteracao(
               k: k,
               a: a,
               b: b,
@@ -151,6 +151,17 @@ class _BisseccaoViewState extends State<BisseccaoView> {
     } finally {
       setState(() => _calculating = false);
     }
+  }
+
+  void _limparFormulario() {
+    _functionController.text = '';
+    _rootsCountController.text = '';
+    _toleranceController.text = '';
+
+    setState(() {
+      _calculating = false;
+      _results = [];
+    });
   }
 
   @override
@@ -209,15 +220,28 @@ class _BisseccaoViewState extends State<BisseccaoView> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        child: FilledButton.icon(
-                          onPressed: _calculating ? null : _calculate,
-                          icon: _calculating
-                              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                              : const Icon(Icons.calculate),
-                          label: const Text('CALCULAR'),
-                        ),
+                      Row(
+                        children: [
+                          // Botão Secundário: Limpar
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: _calculating ? null : _limparFormulario,
+                              icon: const Icon(Icons.clear),
+                              label: const Text('LIMPAR'),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          // Botão Principal: Calcular
+                          Expanded(
+                            child: FilledButton.icon(
+                              onPressed: _calculating ? null : _calculate,
+                              icon: _calculating
+                                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                  : const Icon(Icons.calculate),
+                              label: const Text('CALCULAR'),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),

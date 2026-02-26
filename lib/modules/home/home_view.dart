@@ -1,4 +1,5 @@
 import 'package:calculo_numerico/modules/metodos/bisseccao.dart';
+import 'package:calculo_numerico/modules/metodos/newton_raphson.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/componentes/componentes.dart';
@@ -32,6 +33,11 @@ class HomeView extends StatelessWidget {
               context: context,
               titulo: 'Newton-Raphson',
               icone: Icons.timeline,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const NewtonRaphsonView())
+              ),
+              isActive: true,
             ),
             MetodoCard(
               context: context,
