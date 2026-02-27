@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:function_tree/function_tree.dart';
+import '../../core/componentes/componentes.dart';
 
 /// Armazena os dados de uma única linha da tabela (uma iteração)
 class PassoIteracao {
@@ -164,10 +165,42 @@ class _BisseccaoViewState extends State<BisseccaoView> {
     });
   }
 
+  void _showInfo() {
+    InfoDialog.show(
+      context,
+      titulo: 'Como usar',
+      conteudo: [
+        const Text('Este módulo resolve equações utilizando o Método da Bissecção.', style: TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 16),
+        const Text('Campos de Entrada:', style: TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        const Text('• Função f(x): Digite a expressão matemática (ex: x^3 - 9*x + 3). Use "*" para multiplicação e "^" para potência.'),
+        const SizedBox(height: 8),
+        const Text('• Qtd. Raízes: Define quantas raízes o app deve buscar. Digite "0" para buscar em todo o intervalo padrão (-100 a 100).'),
+        const SizedBox(height: 8),
+        const Text('• Tolerância: Define a precisão desejada (ex: 0.0001). O cálculo para quando o intervalo (b-a) é menor que este valor.'),
+        const SizedBox(height: 16),
+        const Text('Como Funciona:', style: TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        const Text('1. O app realiza uma varredura para isolar intervalos onde há mudança de sinal (Teorema de Bolzano).'),
+        const Text('2. Em cada intervalo, aplica sucessivas divisões ao meio até convergir para a raiz dentro da tolerância definida.'),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Método da Bissecção')),
+      appBar: AppBar(
+        title: const Text('Bissecção'),
+        actions: [
+          IconButton(
+            onPressed: _showInfo,
+            icon: const Icon(Icons.info_outline),
+            tooltip: 'Informações',
+          ),
+        ],
+      ),
       body: SafeArea(
         child: ListView(
           children: [

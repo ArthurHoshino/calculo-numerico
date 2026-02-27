@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:function_tree/function_tree.dart';
+import '../../core/componentes/componentes.dart';
 
 class PassoIteracao {
   final int k;
@@ -119,10 +120,45 @@ class _NewtonRaphsonState extends State<NewtonRaphsonView> {
     });
   }
 
+  void _showInfo() {
+    InfoDialog.show(
+      context,
+      titulo: 'Como usar',
+      conteudo: [
+        const Text('Este módulo resolve equações utilizando o Método de Newton-Raphson.', style: TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 16),
+        const Text('Campos de Entrada:', style: TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        const Text('• Função f(x): Digite a expressão matemática (ex: x^3 - 9*x + 3).'),
+        const SizedBox(height: 8),
+        const Text('• Chute Inicial (x0): Um valor próximo de onde você acredita que a raiz esteja.'),
+        const SizedBox(height: 8),
+        const Text('• Tolerância: Define a precisão desejada (ex: 0.0001).'),
+        const SizedBox(height: 8),
+        const Text('• Qtd. Casas Decimais: Define a precisão da exibição dos números na tabela.'),
+        const SizedBox(height: 16),
+        const Text('Como Funciona:', style: TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        const Text('1. O método utiliza a derivada da função para encontrar a reta tangente ao ponto atual.'),
+        const Text('2. A próxima aproximação é o ponto onde essa tangente cruza o eixo x.'),
+        const Text('3. O processo se repete até que a diferença entre as aproximações seja menor que a tolerância.'),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Método de Newton-Raphson')),
+      appBar: AppBar(
+        title: const Text('Newton-Raphson'),
+        actions: [
+          IconButton(
+            onPressed: _showInfo,
+            icon: const Icon(Icons.info_outline),
+            tooltip: 'Informações',
+          ),
+        ],
+      ),
       body: SafeArea(
         child: ListView(
           children: [
@@ -222,7 +258,6 @@ class _NewtonRaphsonState extends State<NewtonRaphsonView> {
             ),
 
             // --- RESULTS AREA ---
-            // Agora valida apenas se a lista única de passos não está vazia
             if (_resultadoFinal != null) ...[
               const Divider(),
               Padding(
@@ -264,7 +299,7 @@ class _NewtonRaphsonState extends State<NewtonRaphsonView> {
                 child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: DataTable(
-                    headingRowColor: WidgetStateProperty.all(Colors.grey.shade200),
+                    headingRowColor: MaterialStateProperty.all(Colors.grey.shade200),
                     border: TableBorder.all(color: Colors.grey.shade300),
                     columns: const [
                       DataColumn(label: Text('k', style: TextStyle(fontWeight: FontWeight.bold))),
@@ -273,7 +308,6 @@ class _NewtonRaphsonState extends State<NewtonRaphsonView> {
                       DataColumn(label: Text("f'(x)")),
                       DataColumn(label: Text('Erro')),
                     ],
-                    // Mapeando diretamente a variável _steps (sua lista única)
                     rows: _resultadoFinal!.passos.map((step) {
                       double tolerancy = double.tryParse(_toleranciaController.text.replaceAll(',', '.')) ?? 0.0;
 
