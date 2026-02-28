@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:function_tree/function_tree.dart';
+import '../../core/componentes/componentes.dart';
 
 /// Armazena os dados de uma única linha da tabela (uma iteração)
-class IterationStep {
+class PassoIteracao {
   final int k;
   final double a;
   final double b;
@@ -11,7 +12,7 @@ class IterationStep {
   final double fxk;
   final double error;
 
-  IterationStep({
+  PassoIteracao({
     required this.k,
     required this.a,
     required this.b,
@@ -29,7 +30,7 @@ class IterationStep {
 class RootResult {
   final int id;
   final double finalRoot;
-  final List<IterationStep> steps;
+  final List<PassoIteracao> steps;
 
   RootResult({required this.id, required this.finalRoot, required this.steps});
 }
@@ -101,7 +102,7 @@ class _BisseccaoViewState extends State<BisseccaoView> {
       for (int i = 0; i < intervals.length; i++) {
         double a = intervals[i][0];
         double b = intervals[i][1];
-        List<IterationStep> steps = [];
+        List<PassoIteracao> steps = [];
 
         int k = 0;
         double error = double.infinity;
@@ -116,7 +117,7 @@ class _BisseccaoViewState extends State<BisseccaoView> {
 
           error = (b - a).abs();
 
-          steps.add(IterationStep(
+          steps.add(PassoIteracao(
               k: k,
               a: a,
               b: b,
@@ -153,10 +154,53 @@ class _BisseccaoViewState extends State<BisseccaoView> {
     }
   }
 
+  void _limparFormulario() {
+    _functionController.text = '';
+    _rootsCountController.text = '';
+    _toleranceController.text = '';
+
+    setState(() {
+      _calculating = false;
+      _results = [];
+    });
+  }
+
+  void _showInfo() {
+    InfoDialog.show(
+      context,
+      titulo: 'Como usar',
+      conteudo: [
+        const Text('Este módulo resolve equações utilizando o Método da Bissecção.', style: TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 16),
+        const Text('Campos de Entrada:', style: TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        const Text('• Função f(x): Digite a expressão matemática (ex: x^3 - 9*x + 3). Use "*" para multiplicação e "^" para potência.'),
+        const SizedBox(height: 8),
+        const Text('• Qtd. Raízes: Define quantas raízes o app deve buscar. Digite "0" para buscar em todo o intervalo padrão (-100 a 100).'),
+        const SizedBox(height: 8),
+        const Text('• Tolerância: Define a precisão desejada (ex: 0.0001). O cálculo para quando o intervalo (b-a) é menor que este valor.'),
+        const SizedBox(height: 16),
+        const Text('Como Funciona:', style: TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        const Text('1. O app realiza uma varredura para isolar intervalos onde há mudança de sinal (Teorema de Bolzano).'),
+        const Text('2. Em cada intervalo, aplica sucessivas divisões ao meio até convergir para a raiz dentro da tolerância definida.'),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Método da Bissecção')),
+      appBar: AppBar(
+        title: const Text('Bissecção'),
+        actions: [
+          IconButton(
+            onPressed: _showInfo,
+            icon: const Icon(Icons.info_outline),
+            tooltip: 'Informações',
+          ),
+        ],
+      ),
       body: SafeArea(
         child: ListView(
           children: [
@@ -209,15 +253,28 @@ class _BisseccaoViewState extends State<BisseccaoView> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        child: FilledButton.icon(
-                          onPressed: _calculating ? null : _calculate,
-                          icon: _calculating
-                              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                              : const Icon(Icons.calculate),
-                          label: const Text('CALCULAR'),
-                        ),
+                      Row(
+                        children: [
+                          // Botão Secundário: Limpar
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: _calculating ? null : _limparFormulario,
+                              icon: const Icon(Icons.clear),
+                              label: const Text('LIMPAR'),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          // Botão Principal: Calcular
+                          Expanded(
+                            child: FilledButton.icon(
+                              onPressed: _calculating ? null : _calculate,
+                              icon: _calculating
+                                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                  : const Icon(Icons.calculate),
+                              label: const Text('CALCULAR'),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
