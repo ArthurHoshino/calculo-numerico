@@ -1,8 +1,5 @@
 import 'package:calculo_numerico/modules/home/home_view.dart';
 import 'package:flutter/material.dart';
-import 'package:function_tree/function_tree.dart';
-
-import 'core/componentes/componentes.dart';
 
 void main() {
   runApp(const NumericalMethodsApp());

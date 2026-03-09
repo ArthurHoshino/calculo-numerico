@@ -50,6 +50,7 @@ class _BisseccaoViewState extends State<BisseccaoView> {
   final _rootsCountController = TextEditingController(text: "0");
   final _toleranceController = TextEditingController(text: "0.0001");
   final _qtdCasasDecimaisController = TextEditingController(text: "5");
+  final _tamanhoIntervalo = TextEditingController(text: '0.5');
 
   // State
   List<RootResult> _results = [];
@@ -82,7 +83,7 @@ class _BisseccaoViewState extends State<BisseccaoView> {
       List<List<double>> intervals = [];
       double startRange = -100;
       double endRange = 100;
-      double step = 0.5;
+      double step = double.tryParse(_tamanhoIntervalo.text) ?? 0.5;
 
       double prevX = startRange;
       double prevY = f(startRange).toDouble();
@@ -185,6 +186,8 @@ class _BisseccaoViewState extends State<BisseccaoView> {
         const Text('• Tolerância: Define a precisão desejada (ex: 0.0001). O cálculo para quando o intervalo (b-a) é menor que este valor.'),
         const SizedBox(height: 8),
         const Text('• Qtd. Casas Decimais: Define a precisão da exibição dos números na tabela. (Valor padrão: 5)'),
+        const SizedBox(height: 8),
+        const Text('• Tamanho do intervalo: Define o tamanho do intervalo que será utilizado para encontrar as raízes. (Valor padrão: 0.5)'),
         const SizedBox(height: 16),
         const Text('Como Funciona:', style: TextStyle(fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
@@ -198,7 +201,7 @@ class _BisseccaoViewState extends State<BisseccaoView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Bissecção'),
+        title: const Text('Bisseção'),
         actions: [
           IconButton(
             onPressed: _showInfo,
@@ -256,7 +259,11 @@ class _BisseccaoViewState extends State<BisseccaoView> {
                               validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
                             ),
                           ),
-                          const SizedBox(width: 8),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
                           Expanded(
                             child: TextFormField(
                               controller: _qtdCasasDecimaisController,
@@ -264,6 +271,18 @@ class _BisseccaoViewState extends State<BisseccaoView> {
                               decoration: const InputDecoration(
                                 labelText: 'Qtd. casas decimais',
                                 helperText: 'Ex: 10 (padrão 5)',
+                                border: OutlineInputBorder(),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8,),
+                          Expanded(
+                            child: TextFormField(
+                              controller: _tamanhoIntervalo,
+                              keyboardType: TextInputType.numberWithOptions(decimal: true),
+                              decoration: const InputDecoration(
+                                labelText: 'Tamanho do intervalo',
+                                helperText: 'Ex: 1 (padrão 0.5)',
                                 border: OutlineInputBorder(),
                               ),
                             ),
