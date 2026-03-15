@@ -3,6 +3,7 @@ import 'package:calculo_numerico/modules/metodos/newton_raphson.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/componentes/componentes.dart';
+import '../metodos/triangulacao_gauss.dart';
 
 class HomeView extends StatelessWidget {
   const HomeView({super.key});
@@ -41,8 +42,13 @@ class HomeView extends StatelessWidget {
             ),
             MetodoCard(
               context: context,
-              titulo: 'Secante',
-              icone: Icons.auto_graph_rounded,
+              titulo: 'Triangulação de Gauss',
+              icone: Icons.calculate,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const TriangulacaoGaussView())
+              ),
+              isActive: true,
             ),
           ],
         ),
