@@ -1,5 +1,6 @@
 import 'package:calculo_numerico/modules/metodos/bissecao.dart';
 import 'package:calculo_numerico/modules/metodos/gauss_seidel.dart';
+import 'package:calculo_numerico/modules/metodos/interpolacao_polinomial.dart';
 import 'package:calculo_numerico/modules/metodos/newton_raphson.dart';
 import 'package:flutter/material.dart';
 
@@ -54,10 +55,20 @@ class HomeView extends StatelessWidget {
             MetodoCard(
               context: context,
               titulo: 'Gauss-Seidel',
-              icone: Icons.calculate,
+              icone: Icons.functions,
               onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const GaussSeidelView()),
+              ),
+              isActive: true,
+            ),
+            MetodoCard(
+              context: context,
+              titulo: 'Interpolação Polinomial',
+              icone: Icons.scatter_plot,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const InterpolacaoPolinomialView()),
               ),
               isActive: true,
             ),
