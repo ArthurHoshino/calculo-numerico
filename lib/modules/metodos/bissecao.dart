@@ -49,11 +49,14 @@ class _BisseccaoViewState extends State<BisseccaoView> {
   final _functionController = TextEditingController(text: "x^3 - 9*x + 3");
   final _rootsCountController = TextEditingController(text: "0");
   final _toleranceController = TextEditingController(text: "0.0001");
+  final _qtdCasasDecimaisController = TextEditingController(text: "5");
+  final _tamanhoIntervalo = TextEditingController(text: '0.5');
 
   // State
   List<RootResult> _results = [];
   int _selectedRootIndex = 0; // Para o seletor de abas
   bool _calculating = false;
+  int qtdCasasDecimais = 5;
 
   // Algoritmo de Busca e Bissecção
   void _calculate() async {
@@ -73,12 +76,14 @@ class _BisseccaoViewState extends State<BisseccaoView> {
 
       final tolerance = double.parse(_toleranceController.text.replaceAll(',', '.'));
       final maxRootsInput = int.tryParse(_rootsCountController.text) ?? 0;
+      qtdCasasDecimais = int.tryParse(_qtdCasasDecimaisController.text) ?? 5;
+
 
       // 1. Fase de Isolamento (Bracketing)
       List<List<double>> intervals = [];
       double startRange = -100;
       double endRange = 100;
-      double step = 0.5;
+      double step = double.tryParse(_tamanhoIntervalo.text) ?? 0.5;
 
       double prevX = startRange;
       double prevY = f(startRange).toDouble();
@@ -179,6 +184,10 @@ class _BisseccaoViewState extends State<BisseccaoView> {
         const Text('• Qtd. Raízes: Define quantas raízes o app deve buscar. Digite "0" para buscar em todo o intervalo padrão (-100 a 100).'),
         const SizedBox(height: 8),
         const Text('• Tolerância: Define a precisão desejada (ex: 0.0001). O cálculo para quando o intervalo (b-a) é menor que este valor.'),
+        const SizedBox(height: 8),
+        const Text('• Qtd. Casas Decimais: Define a precisão da exibição dos números na tabela. (Valor padrão: 5)'),
+        const SizedBox(height: 8),
+        const Text('• Tamanho do intervalo: Define o tamanho do intervalo que será utilizado para encontrar as raízes. (Valor padrão: 0.5)'),
         const SizedBox(height: 16),
         const Text('Como Funciona:', style: TextStyle(fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
@@ -192,7 +201,7 @@ class _BisseccaoViewState extends State<BisseccaoView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Bissecção'),
+        title: const Text('Bisseção'),
         actions: [
           IconButton(
             onPressed: _showInfo,
@@ -237,7 +246,7 @@ class _BisseccaoViewState extends State<BisseccaoView> {
                               ),
                             ),
                           ),
-                          const SizedBox(width: 16),
+                          const SizedBox(width: 8),
                           Expanded(
                             child: TextFormField(
                               controller: _toleranceController,
@@ -248,6 +257,34 @@ class _BisseccaoViewState extends State<BisseccaoView> {
                                 border: OutlineInputBorder(),
                               ),
                               validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: _qtdCasasDecimaisController,
+                              keyboardType: TextInputType.numberWithOptions(decimal: true),
+                              decoration: const InputDecoration(
+                                labelText: 'Qtd. casas decimais',
+                                helperText: 'Ex: 10 (padrão 5)',
+                                border: OutlineInputBorder(),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8,),
+                          Expanded(
+                            child: TextFormField(
+                              controller: _tamanhoIntervalo,
+                              keyboardType: TextInputType.numberWithOptions(decimal: true),
+                              decoration: const InputDecoration(
+                                labelText: 'Tamanho do intervalo',
+                                helperText: 'Ex: 1 (padrão 0.5)',
+                                border: OutlineInputBorder(),
+                              ),
                             ),
                           ),
                         ],
@@ -297,7 +334,7 @@ class _BisseccaoViewState extends State<BisseccaoView> {
                     return Padding(
                       padding: const EdgeInsets.only(right: 8),
                       child: ChoiceChip(
-                        label: Text('Raiz ${res.id}: ${res.finalRoot.toStringAsFixed(4)}'),
+                        label: Text('Raiz ${res.id}: ${res.finalRoot.toStringAsFixed(qtdCasasDecimais)}'),
                         selected: isSelected,
                         onSelected: (bool selected) {
                           if (selected) {
@@ -331,13 +368,13 @@ class _BisseccaoViewState extends State<BisseccaoView> {
                     rows: _results[_selectedRootIndex].steps.map((step) {
                       return DataRow(cells: [
                         DataCell(Text(step.k.toString())),
-                        DataCell(Text(step.a.toStringAsFixed(5))),
-                        DataCell(Text(step.b.toStringAsFixed(5))),
-                        DataCell(Text(step.xk.toStringAsFixed(5), style: const TextStyle(fontWeight: FontWeight.bold))),
-                        DataCell(Text(step.fa.toStringAsFixed(5))),
-                        DataCell(Text(step.fxk.toStringAsFixed(5))),
-                        DataCell(Text(step.faTimesFxk.toStringAsFixed(5))),
-                        DataCell(Text(step.error.toStringAsFixed(6), style: TextStyle(color: step.error > double.parse(_toleranceController.text) ? Colors.red.shade700 : Colors.green.shade700))),
+                        DataCell(Text(step.a.toStringAsFixed(qtdCasasDecimais))),
+                        DataCell(Text(step.b.toStringAsFixed(qtdCasasDecimais))),
+                        DataCell(Text(step.xk.toStringAsFixed(qtdCasasDecimais), style: const TextStyle(fontWeight: FontWeight.bold))),
+                        DataCell(Text(step.fa.toStringAsFixed(qtdCasasDecimais))),
+                        DataCell(Text(step.fxk.toStringAsFixed(qtdCasasDecimais))),
+                        DataCell(Text(step.faTimesFxk.toStringAsFixed(qtdCasasDecimais))),
+                        DataCell(Text(step.error.toStringAsFixed(qtdCasasDecimais), style: TextStyle(color: step.error > double.parse(_toleranceController.text) ? Colors.red.shade700 : Colors.green.shade700))),
                       ]);
                     }).toList(),
                   ),
