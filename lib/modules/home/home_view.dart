@@ -1,6 +1,7 @@
 import 'package:calculo_numerico/modules/metodos/bissecao.dart';
 import 'package:calculo_numerico/modules/metodos/gauss_seidel.dart';
 import 'package:calculo_numerico/modules/metodos/interpolacao_polinomial.dart';
+import 'package:calculo_numerico/modules/metodos/lagrange.dart';
 import 'package:calculo_numerico/modules/metodos/newton_raphson.dart';
 import 'package:flutter/material.dart';
 
@@ -71,6 +72,21 @@ class HomeView extends StatelessWidget {
                 MaterialPageRoute(builder: (context) => const InterpolacaoPolinomialView()),
               ),
               isActive: true,
+            ),
+            MetodoCard(
+              context: context,
+              titulo: 'Interpolação de Lagrange',
+              icone: Icons.polyline,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const LagrangeView()),
+              ),
+              isActive: true,
+            ),
+            MetodoCard(
+              context: context,
+              titulo: 'Em desenvolvimento',
+              icone: Icons.gesture,
             ),
           ],
         ),
