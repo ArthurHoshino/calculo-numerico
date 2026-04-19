@@ -25,7 +25,7 @@ class InfoDialog extends StatelessWidget {
         children: [
           const Icon(Icons.info_outline, color: Colors.blue),
           const SizedBox(width: 8),
-          Text(titulo),
+          Expanded(child: Text(titulo)),
         ],
       ),
       content: SizedBox(
