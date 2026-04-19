@@ -216,9 +216,23 @@ class _InterpolacaoPolinomialViewState extends State<InterpolacaoPolinomialView>
                     ..._pontoControllers.asMap().entries.map((entry) => Padding(
                       padding: const EdgeInsets.only(bottom: 8),
                       child: Row(children: [
-                        Expanded(child: TextFormField(controller: entry.value.x, decoration: InputDecoration(labelText: 'x${entry.key}', border: const OutlineInputBorder()))),
+                        Expanded(child: TextFormField(
+                          controller: entry.value.x,
+                          keyboardType: const TextInputType.numberWithOptions(signed: true),
+                          decoration: InputDecoration(
+                            labelText: 'x${entry.key}',
+                            border: const OutlineInputBorder()
+                          )
+                        )),
                         const SizedBox(width: 8),
-                        Expanded(child: TextFormField(controller: entry.value.y, decoration: InputDecoration(labelText: 'y${entry.key}', border: const OutlineInputBorder()))),
+                        Expanded(child: TextFormField(
+                          controller: entry.value.y,
+                          keyboardType: const TextInputType.numberWithOptions(signed: true),
+                          decoration: InputDecoration(
+                            labelText: 'y${entry.key}',
+                            border: const OutlineInputBorder()
+                          )
+                        )),
                         if (_pontoControllers.length > 2) IconButton(icon: const Icon(Icons.remove_circle_outline, color: Colors.red), onPressed: () => _removePonto(entry.key))
                       ]),
                     )),
