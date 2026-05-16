@@ -1,6 +1,9 @@
 import 'package:calculo_numerico/modules/metodos/bissecao.dart';
 import 'package:calculo_numerico/modules/metodos/gauss_seidel.dart';
+import 'package:calculo_numerico/modules/metodos/integracao_numerica_trapezios.dart';
 import 'package:calculo_numerico/modules/metodos/interpolacao_polinomial.dart';
+import 'package:calculo_numerico/modules/metodos/interpolacao_polinomial_minimos_quadrados.dart';
+import 'package:calculo_numerico/modules/metodos/interpolacao_polinomial_newton.dart';
 import 'package:calculo_numerico/modules/metodos/lagrange.dart';
 import 'package:calculo_numerico/modules/metodos/newton_raphson.dart';
 import 'package:flutter/material.dart';
@@ -75,7 +78,7 @@ class HomeView extends StatelessWidget {
             ),
             MetodoCard(
               context: context,
-              titulo: 'Interpolação de Lagrange',
+              titulo: 'Interpolação Polinomial - Forma de Lagrange',
               icone: Icons.polyline,
               onTap: () => Navigator.push(
                 context,
@@ -85,8 +88,33 @@ class HomeView extends StatelessWidget {
             ),
             MetodoCard(
               context: context,
-              titulo: 'Em desenvolvimento',
+              titulo: 'Forma de Newton',
               icone: Icons.gesture,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const InterpolacaoPolinomialNewtonView()),
+              ),
+              isActive: true,
+            ),
+            MetodoCard(
+              context: context,
+              titulo: 'Método dos Mínimios Quadrados',
+              icone: Icons.token,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const MinimosQuadradosView()),
+              ),
+              isActive: true,
+            ),
+            MetodoCard(
+              context: context,
+              titulo: 'Métodos dos Trapézios',
+              icone: Icons.view_column_outlined,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const IntegracaoTrapezioView())
+              ),
+              isActive: true,
             ),
           ],
         ),
