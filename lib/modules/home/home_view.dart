@@ -1,4 +1,5 @@
 import 'package:calculo_numerico/modules/metodos/bissecao.dart';
+import 'package:calculo_numerico/modules/metodos/forma_simpson.dart';
 import 'package:calculo_numerico/modules/metodos/gauss_seidel.dart';
 import 'package:calculo_numerico/modules/metodos/integracao_numerica_trapezios.dart';
 import 'package:calculo_numerico/modules/metodos/interpolacao_polinomial.dart';
@@ -11,13 +12,40 @@ import 'package:flutter/material.dart';
 import '../../core/componentes/componentes.dart';
 import '../metodos/triangulacao_gauss.dart';
 
-class HomeView extends StatelessWidget {
+class HomeView extends StatefulWidget {
   const HomeView({super.key});
+
+  @override
+  State<HomeView> createState() => _HomeViewState();
+}
+
+class _HomeViewState extends State<HomeView> {
+  bool _useDefaultValues = true;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Métodos Numéricos')),
+      appBar: AppBar(
+        title: const Text('Métodos Numéricos'),
+        actions: [
+          Row(
+            children: [
+              const Text('Valores de Exemplo', style: TextStyle(fontSize: 14)),
+              Switch(
+                value: _useDefaultValues,
+                onChanged: (value) {
+                  setState(() {
+                    _useDefaultValues = value;
+                  });
+                },
+                activeColor: Colors.white,
+                activeTrackColor: Colors.blue.shade200,
+              ),
+            ],
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
       body: SafeArea(
         child: GridView.count(
           padding: const EdgeInsets.all(16),
@@ -31,7 +59,7 @@ class HomeView extends StatelessWidget {
               icone: Icons.content_cut,
               onTap: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const BisseccaoView()),
+                MaterialPageRoute(builder: (context) => BisseccaoView(fillDefaultValues: _useDefaultValues)),
               ),
               isActive: true,
             ),
@@ -42,7 +70,7 @@ class HomeView extends StatelessWidget {
               icone: Icons.timeline,
               onTap: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const NewtonRaphsonView())
+                MaterialPageRoute(builder: (context) => NewtonRaphsonView(fillDefaultValues: _useDefaultValues))
               ),
               isActive: true,
             ),
@@ -52,7 +80,7 @@ class HomeView extends StatelessWidget {
               icone: Icons.calculate,
               onTap: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const TriangulacaoGaussView())
+                MaterialPageRoute(builder: (context) => TriangulacaoGaussView(fillDefaultValues: _useDefaultValues))
               ),
               isActive: true,
             ),
@@ -62,7 +90,7 @@ class HomeView extends StatelessWidget {
               icone: Icons.functions,
               onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const GaussSeidelView()),
+                  MaterialPageRoute(builder: (context) => GaussSeidelView(fillDefaultValues: _useDefaultValues)),
               ),
               isActive: true,
             ),
@@ -72,7 +100,7 @@ class HomeView extends StatelessWidget {
               icone: Icons.scatter_plot,
               onTap: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const InterpolacaoPolinomialView()),
+                MaterialPageRoute(builder: (context) => InterpolacaoPolinomialView(fillDefaultValues: _useDefaultValues)),
               ),
               isActive: true,
             ),
@@ -82,7 +110,7 @@ class HomeView extends StatelessWidget {
               icone: Icons.polyline,
               onTap: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const LagrangeView()),
+                MaterialPageRoute(builder: (context) => LagrangeView(fillDefaultValues: _useDefaultValues)),
               ),
               isActive: true,
             ),
@@ -92,7 +120,7 @@ class HomeView extends StatelessWidget {
               icone: Icons.gesture,
               onTap: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const InterpolacaoPolinomialNewtonView()),
+                MaterialPageRoute(builder: (context) => InterpolacaoPolinomialNewtonView(fillDefaultValues: _useDefaultValues)),
               ),
               isActive: true,
             ),
@@ -102,17 +130,27 @@ class HomeView extends StatelessWidget {
               icone: Icons.token,
               onTap: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const MinimosQuadradosView()),
+                MaterialPageRoute(builder: (context) => MinimosQuadradosView(fillDefaultValues: _useDefaultValues)),
               ),
               isActive: true,
             ),
             MetodoCard(
               context: context,
-              titulo: 'Métodos dos Trapézios',
+              titulo: 'Método dos Trapézios',
               icone: Icons.view_column_outlined,
               onTap: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const IntegracaoTrapezioView())
+                MaterialPageRoute(builder: (context) => IntegracaoTrapezioView(fillDefaultValues: _useDefaultValues))
+              ),
+              isActive: true,
+            ),
+            MetodoCard(
+              context: context,
+              titulo: 'Regra 1/3 de Simpson',
+              icone: Icons.bar_chart,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => FormaSimpsonView(fillDefaultValues: _useDefaultValues))
               ),
               isActive: true,
             ),

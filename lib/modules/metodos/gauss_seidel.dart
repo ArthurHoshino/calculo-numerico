@@ -14,7 +14,8 @@ class PassoGaussSeidel {
 }
 
 class GaussSeidelView extends StatefulWidget {
-  const GaussSeidelView({super.key});
+  final bool fillDefaultValues;
+  const GaussSeidelView({super.key, this.fillDefaultValues = true});
 
   @override
   State<GaussSeidelView> createState() => _GaussSeidelViewState();
@@ -23,16 +24,16 @@ class GaussSeidelView extends StatefulWidget {
 class _GaussSeidelViewState extends State<GaussSeidelView> {
   final _formKey = GlobalKey<FormState>();
   
-  final List<TextEditingController> _equacaoControllers = [
+  late final List<TextEditingController> _equacaoControllers = widget.fillDefaultValues ? [
     TextEditingController(text: '20 1 1 2 33'),
     TextEditingController(text: '1 10 2 4 38.4'),
     TextEditingController(text: '1 2 10 1 43.5'),
     TextEditingController(text: '2 4 1 20 45.6'),
-  ];
+  ] : [TextEditingController(), TextEditingController()];
   
-  final _toleranciaController = TextEditingController(text: "0.001");
-  final _casasDecimaisController = TextEditingController(text: "5");
-  final _maxIteracoesController = TextEditingController(text: "100");
+  late final _toleranciaController = TextEditingController(text: widget.fillDefaultValues ? "0.001" : "");
+  late final _casasDecimaisController = TextEditingController(text: widget.fillDefaultValues ? "5" : "");
+  late final _maxIteracoesController = TextEditingController(text: widget.fillDefaultValues ? "100" : "");
 
   bool _calculating = false;
   List<PassoGaussSeidel> _passos = [];

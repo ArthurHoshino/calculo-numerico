@@ -4,7 +4,8 @@ import 'package:flutter_math_fork/flutter_math.dart';
 import '../../core/componentes/componentes.dart';
 
 class LagrangeView extends StatefulWidget {
-  const LagrangeView({super.key});
+  final bool fillDefaultValues;
+  const LagrangeView({super.key, this.fillDefaultValues = true});
 
   @override
   State<LagrangeView> createState() => _LagrangeViewState();
@@ -13,11 +14,14 @@ class LagrangeView extends StatefulWidget {
 class _LagrangeViewState extends State<LagrangeView> {
   final _formKey = GlobalKey<FormState>();
 
-  final List<({TextEditingController x, TextEditingController y})> _pontoControllers = [
+  late final List<({TextEditingController x, TextEditingController y})> _pontoControllers = widget.fillDefaultValues ? [
     (x: TextEditingController(text: '-2'), y: TextEditingController(text: '-47')),
     (x: TextEditingController(text: '0'), y: TextEditingController(text: '-3')),
     (x: TextEditingController(text: '1'), y: TextEditingController(text: '4')),
     (x: TextEditingController(text: '2'), y: TextEditingController(text: '41')),
+  ] : [
+    (x: TextEditingController(), y: TextEditingController()),
+    (x: TextEditingController(), y: TextEditingController()),
   ];
 
   final _pontoAvaliacaoController = TextEditingController();

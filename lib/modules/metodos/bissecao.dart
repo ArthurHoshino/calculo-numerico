@@ -36,7 +36,8 @@ class RootResult {
 }
 
 class BisseccaoView extends StatefulWidget {
-  const BisseccaoView({super.key});
+  final bool fillDefaultValues;
+  const BisseccaoView({super.key, this.fillDefaultValues = true});
 
   @override
   State<BisseccaoView> createState() => _BisseccaoViewState();
@@ -46,11 +47,11 @@ class _BisseccaoViewState extends State<BisseccaoView> {
   final _formKey = GlobalKey<FormState>();
 
   // Controllers
-  final _functionController = TextEditingController(text: "x^3 - 9*x + 3");
-  final _rootsCountController = TextEditingController(text: "0");
-  final _toleranceController = TextEditingController(text: "0.0001");
-  final _qtdCasasDecimaisController = TextEditingController(text: "5");
-  final _tamanhoIntervalo = TextEditingController(text: '0.5');
+  late final _functionController = TextEditingController(text: widget.fillDefaultValues ? "x^3 - 9*x + 3" : "");
+  late final _rootsCountController = TextEditingController(text: widget.fillDefaultValues ? "0" : "");
+  late final _toleranceController = TextEditingController(text: widget.fillDefaultValues ? "0.0001" : "");
+  late final _qtdCasasDecimaisController = TextEditingController(text: widget.fillDefaultValues ? "5" : "");
+  late final _tamanhoIntervalo = TextEditingController(text: widget.fillDefaultValues ? '0.5' : "");
 
   // State
   List<RootResult> _results = [];
