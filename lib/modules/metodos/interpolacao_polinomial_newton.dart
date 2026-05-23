@@ -4,7 +4,8 @@ import 'package:flutter_math_fork/flutter_math.dart';
 import '../../core/componentes/componentes.dart';
 
 class InterpolacaoPolinomialNewtonView extends StatefulWidget {
-  const InterpolacaoPolinomialNewtonView({super.key});
+  final bool fillDefaultValues;
+  const InterpolacaoPolinomialNewtonView({super.key, this.fillDefaultValues = true});
 
   @override
   State<InterpolacaoPolinomialNewtonView> createState() => _InterpolacaoPolinomialNewtonViewState();
@@ -13,10 +14,13 @@ class InterpolacaoPolinomialNewtonView extends StatefulWidget {
 class _InterpolacaoPolinomialNewtonViewState extends State<InterpolacaoPolinomialNewtonView> {
   final _formKey = GlobalKey<FormState>();
 
-  final List<({TextEditingController x, TextEditingController y})> _pontoControllers = [
+  late final List<({TextEditingController x, TextEditingController y})> _pontoControllers = widget.fillDefaultValues ? [
     (x: TextEditingController(text: '-1'), y: TextEditingController(text: '4')),
     (x: TextEditingController(text: '0'), y: TextEditingController(text: '1')),
     (x: TextEditingController(text: '2'), y: TextEditingController(text: '-1')),
+  ] : [
+    (x: TextEditingController(), y: TextEditingController()),
+    (x: TextEditingController(), y: TextEditingController()),
   ];
 
   final _pontoAvaliacaoController = TextEditingController();
