@@ -4,7 +4,8 @@ import 'package:flutter_math_fork/flutter_math.dart';
 import '../../core/componentes/componentes.dart';
 
 class MinimosQuadradosView extends StatefulWidget {
-  const MinimosQuadradosView({super.key});
+  final bool fillDefaultValues;
+  const MinimosQuadradosView({super.key, this.fillDefaultValues = true});
 
   @override
   State<MinimosQuadradosView> createState() => _MinimosQuadradosViewState();
@@ -13,14 +14,17 @@ class MinimosQuadradosView extends StatefulWidget {
 class _MinimosQuadradosViewState extends State<MinimosQuadradosView> {
   final _formKey = GlobalKey<FormState>();
 
-  final List<({TextEditingController x, TextEditingController y})> _pontoControllers = [
-    (x: TextEditingController(text: '-1'), y: TextEditingController(text: '4')),
-    (x: TextEditingController(text: '0'), y: TextEditingController(text: '1')),
-    (x: TextEditingController(text: '2'), y: TextEditingController(text: '-1')),
-    (x: TextEditingController(text: '3'), y: TextEditingController(text: '5')),
+  late final List<({TextEditingController x, TextEditingController y})> _pontoControllers = widget.fillDefaultValues ? [
+    (x: TextEditingController(text: '1'), y: TextEditingController(text: '3')),
+    (x: TextEditingController(text: '3'), y: TextEditingController(text: '7')),
+    (x: TextEditingController(text: '4'), y: TextEditingController(text: '9')),
+  ] : [
+    (x: TextEditingController(), y: TextEditingController()),
+    (x: TextEditingController(), y: TextEditingController()),
+    (x: TextEditingController(), y: TextEditingController()),
   ];
 
-  final _grauController = TextEditingController(text: '1');
+  late final _grauController = TextEditingController(text: widget.fillDefaultValues ? '1' : '');
   final _pontoAvaliacaoController = TextEditingController();
 
   bool _calculating = false;

@@ -13,15 +13,15 @@ class PontoEntrada {
   }
 }
 
-class IntegracaoTrapezioView extends StatefulWidget {
+class FormaSimpsonView extends StatefulWidget {
   final bool fillDefaultValues;
-  const IntegracaoTrapezioView({super.key, this.fillDefaultValues = true});
+  const FormaSimpsonView({super.key, this.fillDefaultValues = true});
 
   @override
-  State<IntegracaoTrapezioView> createState() => _IntegracaoTrapezioViewState();
+  State<FormaSimpsonView> createState() => _FormaSimpsonViewState();
 }
 
-class _IntegracaoTrapezioViewState extends State<IntegracaoTrapezioView> {
+class _FormaSimpsonViewState extends State<FormaSimpsonView> {
   final _formKey = GlobalKey<FormState>();
 
   bool _isModoFuncao = true;
@@ -33,7 +33,7 @@ class _IntegracaoTrapezioViewState extends State<IntegracaoTrapezioView> {
   late final _nController = TextEditingController(text: widget.fillDefaultValues ? '4' : '');
 
   // Controladores para o modo de pontos
-  final List<PontoEntrada> _pontos = [PontoEntrada(), PontoEntrada()];
+  final List<PontoEntrada> _pontos = [PontoEntrada(), PontoEntrada(), PontoEntrada()];
 
   bool _calculating = false;
   
@@ -69,13 +69,13 @@ class _IntegracaoTrapezioViewState extends State<IntegracaoTrapezioView> {
   }
 
   void _removerPonto(int index) {
-    if (_pontos.length > 2) {
+    if (_pontos.length > 3) {
       setState(() {
         _pontos[index].dispose();
         _pontos.removeAt(index);
       });
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('É necessário pelo menos 2 pontos para calcular a integral.')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('É necessário pelo menos 3 pontos para a regra 1/3 de Simpson.')));
     }
   }
 
@@ -110,32 +110,40 @@ class _IntegracaoTrapezioViewState extends State<IntegracaoTrapezioView> {
     double b = double.parse(_limiteBController.text.replaceAll(',', '.'));
     int n = int.parse(_nController.text);
 
-    if (n <= 0) throw Exception("O número de trapézios/intervalos (n) deve ser maior que zero.");
+    if (n <= 0) throw Exception("O número de subintervalos (n) deve ser maior que zero.");
+    if (n % 2 != 0) throw Exception("Para a regra 1/3 de Simpson, o número de subintervalos (n) deve ser par.");
 
     // h = (b - a) / n
     double h = (b - a) / n;
 
     List<Map<String, double>> parsedPoints = [];
 
-    // Fórmula dos Trapézios Composto: I = (h/2) * [f(a) + 2*f(x1) + 2*f(x2) + ... + f(b)]
-    double somaInterior = 0;
-    
     // Adiciona o primeiro ponto a
     double fa = f(a).toDouble();
     parsedPoints.add({'x': a, 'y': fa});
 
+    double somaImpares = 0;
+    double somaPares = 0;
+
     for (int i = 1; i < n; i++) {
       double xi = a + (h * i);
       double yi = f(xi).toDouble();
-      somaInterior += yi;
+      
+      if (i % 2 != 0) {
+        somaImpares += yi;
+      } else {
+        somaPares += yi;
+      }
+      
       parsedPoints.add({'x': xi, 'y': yi});
     }
 
     double fb = f(b).toDouble();
     parsedPoints.add({'x': b, 'y': fb});
 
-    double somaTotal = fa + (somaInterior * 2) + fb;
-    double integral = somaTotal * h / 2;
+    // Fórmula 1/3 de Simpson: I = (h/3) * [f(a) + 4*Soma(impares) + 2*Soma(pares) + f(b)]
+    double somaTotal = fa + (4 * somaImpares) + (2 * somaPares) + fb;
+    double integral = (h / 3) * somaTotal;
 
     setState(() {
       _funcaoStr = funcExpression;
@@ -149,7 +157,8 @@ class _IntegracaoTrapezioViewState extends State<IntegracaoTrapezioView> {
   }
 
   void _calcularModoPontos() {
-    if (_pontos.length < 2) throw Exception("São necessários pelo menos 2 pontos.");
+    if (_pontos.length < 3) throw Exception("São necessários pelo menos 3 pontos.");
+    if ((_pontos.length - 1) % 2 != 0) throw Exception("O número de subintervalos (pontos - 1) deve ser par.");
 
     final funcExpression = _functionController.text;
     final f = funcExpression.toSingleVariableFunction('x');
@@ -162,24 +171,39 @@ class _IntegracaoTrapezioViewState extends State<IntegracaoTrapezioView> {
       parsedPoints.add({'x': x, 'y': y});
     }
 
-    // Ordenar os pontos pelo eixo X para garantir a sequência correta dos trapézios
+    // Ordenar os pontos pelo eixo X
     parsedPoints.sort((a, b) => a['x']!.compareTo(b['x']!));
 
-    double integral = 0;
-    for (int i = 1; i < parsedPoints.length; i++) {
-      double x0 = parsedPoints[i - 1]['x']!;
-      double y0 = parsedPoints[i - 1]['y']!;
-      double x1 = parsedPoints[i]['x']!;
-      double y1 = parsedPoints[i]['y']!;
-
-      // Área do trapézio: ((B + b) * h) / 2
-      integral += ((y1 + y0) * (x1 - x0)) / 2;
+    // Verificar se os pontos estão igualmente espaçados (com pequena tolerância para float)
+    double h = parsedPoints[1]['x']! - parsedPoints[0]['x']!;
+    for (int i = 1; i < parsedPoints.length - 1; i++) {
+      double currentH = parsedPoints[i + 1]['x']! - parsedPoints[i]['x']!;
+      if ((currentH - h).abs() > 1e-5) {
+        throw Exception("Os pontos devem ser igualmente espaçados para a regra 1/3 de Simpson.");
+      }
     }
+
+    int n = parsedPoints.length - 1;
+    double somaImpares = 0;
+    double somaPares = 0;
+
+    for (int i = 1; i < n; i++) {
+      double yi = parsedPoints[i]['y']!;
+      if (i % 2 != 0) {
+        somaImpares += yi;
+      } else {
+        somaPares += yi;
+      }
+    }
+
+    double somaTotal = parsedPoints[0]['y']! + (4 * somaImpares) + (2 * somaPares) + parsedPoints[n]['y']!;
+    double integral = (h / 3) * somaTotal;
 
     setState(() {
       _funcaoStr = funcExpression;
       _pontosCalculados = parsedPoints;
-      _n = parsedPoints.length - 1; // n intervalos
+      _n = n;
+      _h = h; // Para modo pontos, h é a distância entre x_i e x_{i+1}
       _resultadoIntegral = integral;
     });
   }
@@ -203,10 +227,10 @@ class _IntegracaoTrapezioViewState extends State<IntegracaoTrapezioView> {
   void _showInfo() {
     InfoDialog.show(
       context,
-      titulo: 'Integração: Trapézios',
+      titulo: 'Integração: Regra 1/3 de Simpson',
       conteudo: [
         const Text(
-          'A Regra dos Trapézios aproxima a integral definida de uma função dividindo a área sob a curva em n trapézios.',
+          'A Regra 1/3 de Simpson aproxima a integral definida usando polinômios de segundo grau (parábolas) em pares de subintervalos.',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
@@ -221,11 +245,12 @@ class _IntegracaoTrapezioViewState extends State<IntegracaoTrapezioView> {
         const Text('Modo Função:', style: TextStyle(fontWeight: FontWeight.bold)),
         const Text('• Insira a função a ser integrada em termos de x.'),
         const Text('• Defina o limite inferior (a) e o limite superior (b).'),
-        const Text('• Escolha o número de trapézios/intervalos (n).'),
+        const Text('• Escolha o número de subintervalos (n), que deve ser obrigatoriamente um número PAR.'),
         const SizedBox(height: 16),
         const Text('Modo Pontos (Discretos):', style: TextStyle(fontWeight: FontWeight.bold)),
         const Text('• Adicione as coordenadas (x, y) de cada ponto conhecido.'),
-        const Text('• O método calculará automaticamente o número de intervalos e somará a área de todos os trapézios formados entre pontos consecutivos (após ordená-los pelo eixo X).'),
+        const Text('• É necessário um número ímpar de pontos (para obter um n par).'),
+        const Text('• Os valores de x devem ser obrigatoriamente espaçados de forma igual (constante h).'),
       ],
     );
   }
@@ -236,14 +261,11 @@ class _IntegracaoTrapezioViewState extends State<IntegracaoTrapezioView> {
       String tex = f.tex;
       
       // Corrigindo bugs da propriedade .tex da biblioteca function_tree:
-      tex = tex.replaceAll('\x0C', ''); // \x0c (form feed) no lugar de \f (frac)
+      tex = tex.replaceAll('\x0C', '');
       tex = tex.replaceAll('rac{', r'\frac{');
-      
       tex = tex.replaceAll(' cdot ', r' \cdot ');
-      
-      tex = tex.replaceAll('\x08', ''); // \x08 (backspace) no lugar de \b (bmod)
+      tex = tex.replaceAll('\x08', '');
       tex = tex.replaceAll(' mod ', r' \bmod ');
-      
       tex = tex.replaceAll(' sin', r' \sin');
       tex = tex.replaceAll(' cos', r' \cos');
       tex = tex.replaceAll(' tan', r' \tan');
@@ -300,7 +322,7 @@ class _IntegracaoTrapezioViewState extends State<IntegracaoTrapezioView> {
           controller: _nController,
           keyboardType: TextInputType.number,
           decoration: const InputDecoration(
-            labelText: 'Número de trapézios/intervalos (n)', 
+            labelText: 'Número de subintervalos (n par)', 
             border: OutlineInputBorder(),
             prefixIcon: Icon(Icons.bar_chart)
           ),
@@ -384,7 +406,7 @@ class _IntegracaoTrapezioViewState extends State<IntegracaoTrapezioView> {
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Método dos Trapézios'),
+          title: const Text('Regra 1/3 de Simpson'),
           actions: [
             IconButton(
               onPressed: _showInfo,
@@ -507,10 +529,10 @@ class _IntegracaoTrapezioViewState extends State<IntegracaoTrapezioView> {
                             ),
                             const Divider(),
                             Text(
-                              'Quantidade de Trapézios (Intervalos): ${_n!}',
+                              'Quantidade de Intervalos (n): ${_n!}',
                               style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
                             ),
-                            if (_isModoFuncao)
+                            if (_h != null)
                               Text(
                                 'Passo (h): ${_h!.toStringAsFixed(6)}',
                                 style: TextStyle(fontSize: 14, color: Colors.grey.shade700),

@@ -33,7 +33,8 @@ class RaizEncontrada {
 }
 
 class NewtonRaphsonView extends StatefulWidget {
-  const NewtonRaphsonView({super.key});
+  final bool fillDefaultValues;
+  const NewtonRaphsonView({super.key, this.fillDefaultValues = true});
 
   @override
   State<NewtonRaphsonView> createState() => _NewtonRaphsonState();
@@ -43,10 +44,10 @@ class _NewtonRaphsonState extends State<NewtonRaphsonView> {
   final _formKey = GlobalKey<FormState>();
 
   // Controllers
-  final _functionController = TextEditingController(text: '2*x^3 + 3*x^2 - 2');
-  final _toleranciaController = TextEditingController(text: '0.0001');
-  final _valorInicial = TextEditingController(text: '0.5');
-  final _qtdCasasDecimaisController = TextEditingController(text: '5');
+  late final _functionController = TextEditingController(text: widget.fillDefaultValues ? '2*x^3 + 3*x^2 - 2' : '');
+  late final _toleranciaController = TextEditingController(text: widget.fillDefaultValues ? '0.0001' : '');
+  late final _valorInicial = TextEditingController(text: widget.fillDefaultValues ? '0.5' : '');
+  late final _qtdCasasDecimaisController = TextEditingController(text: widget.fillDefaultValues ? '5' : '');
 
   // Estado
   RaizEncontrada? _resultadoFinal;

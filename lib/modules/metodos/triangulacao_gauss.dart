@@ -3,7 +3,8 @@ import 'package:fraction/fraction.dart';
 import '../../core/componentes/componentes.dart';
 
 class TriangulacaoGaussView extends StatefulWidget {
-  const TriangulacaoGaussView({super.key});
+  final bool fillDefaultValues;
+  const TriangulacaoGaussView({super.key, this.fillDefaultValues = true});
 
   @override
   State<TriangulacaoGaussView> createState() => _TriangulacaoGaussViewState();
@@ -13,10 +14,11 @@ class _TriangulacaoGaussViewState extends State<TriangulacaoGaussView> {
   final _formKey = GlobalKey<FormState>();
   
   // Lista dinâmica de controllers para as equações/linhas da matriz
-  final List<TextEditingController> _controllers = [
-    TextEditingController(),
-    TextEditingController(),
-  ];
+  late final List<TextEditingController> _controllers = widget.fillDefaultValues ? [
+    TextEditingController(text: '0 8 2 -7'),
+    TextEditingController(text: '3 5 2 8'),
+    TextEditingController(text: '6 2 8 26'),
+  ] : [TextEditingController(), TextEditingController()];
 
   bool _calculating = false;
   List<Fraction>? _solucao;
