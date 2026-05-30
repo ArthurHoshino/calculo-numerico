@@ -25,6 +25,7 @@ O projeto engloba a implementação de diversos algoritmos matemáticos dividido
 ### Integração Numérica
 *   **Regra dos Trapézios**
 *   **Regra 1/3 de Simpson**
+*   **Regra 3/8 de Simpson**
 
 ## 🛠️ Tecnologias e Pacotes Utilizados
 

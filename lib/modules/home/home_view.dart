@@ -1,5 +1,6 @@
 import 'package:calculo_numerico/modules/metodos/bissecao.dart';
 import 'package:calculo_numerico/modules/metodos/forma_simpson.dart';
+import 'package:calculo_numerico/modules/metodos/forma_simpson_v2.dart';
 import 'package:calculo_numerico/modules/metodos/gauss_seidel.dart';
 import 'package:calculo_numerico/modules/metodos/integracao_numerica_trapezios.dart';
 import 'package:calculo_numerico/modules/metodos/interpolacao_polinomial.dart';
@@ -151,6 +152,16 @@ class _HomeViewState extends State<HomeView> {
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => FormaSimpsonView(fillDefaultValues: _useDefaultValues))
+              ),
+              isActive: true,
+            ),
+            MetodoCard(
+              context: context,
+              titulo: 'Regra 3/8 de Simpson',
+              icone: Icons.area_chart,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => FormaSimpsonV2View(fillDefaultValues: _useDefaultValues))
               ),
               isActive: true,
             ),
