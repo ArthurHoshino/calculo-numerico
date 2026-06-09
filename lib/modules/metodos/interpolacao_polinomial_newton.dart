@@ -47,27 +47,27 @@ class _InterpolacaoPolinomialNewtonViewState extends State<InterpolacaoPolinomia
     }
   }
 
-  Fraction _fractionPow(Fraction base, int exponent) {
-    Fraction result = Fraction(1);
+  double _doublePow(double base, int exponent) {
+    double result = 1.0;
     for (int i = 0; i < exponent; i++) {
-      result = (result * base).reduce();
+      result *= base;
     }
     return result;
   }
 
-  List<Fraction> _multiplicarPolinomios(List<Fraction> p1, List<Fraction> p2) {
-    List<Fraction> result = List.filled(p1.length + p2.length - 1, Fraction(0));
+  List<double> _multiplicarPolinomiosDouble(List<double> p1, List<double> p2) {
+    List<double> result = List.filled(p1.length + p2.length - 1, 0.0);
     for (int i = 0; i < p1.length; i++) {
       for (int j = 0; j < p2.length; j++) {
-        result[i + j] = (result[i + j] + (p1[i] * p2[j])).reduce();
+        result[i + j] += p1[i] * p2[j];
       }
     }
     return result;
   }
 
-  List<Fraction> _calcularDiferencasDivididas(List<Fraction> x, List<Fraction> y) {
+  List<double> _calcularDiferencasDivididasDouble(List<double> x, List<double> y) {
     int n = x.length;
-    List<List<Fraction>> f = List.generate(n, (i) => List.filled(n, Fraction(0)));
+    List<List<double>> f = List.generate(n, (i) => List.filled(n, 0.0));
 
     for (int i = 0; i < n; i++) {
       f[i][0] = y[i];
@@ -75,32 +75,50 @@ class _InterpolacaoPolinomialNewtonViewState extends State<InterpolacaoPolinomia
 
     for (int j = 1; j < n; j++) {
       for (int i = 0; i < n - j; i++) {
-        f[i][j] = ((f[i + 1][j - 1] - f[i][j - 1]) / (x[i + j] - x[i])).reduce();
+        double denom = x[i + j] - x[i];
+        if (denom.abs() < 1e-15) {
+          throw Exception("Pontos de X duplicados ou muito próximos encontrados. Não é possível calcular diferenças divididas.");
+        }
+        f[i][j] = (f[i + 1][j - 1] - f[i][j - 1]) / denom;
       }
     }
 
-    List<Fraction> coeficientesNewton = [];
+    List<double> coeficientesNewton = [];
     for (int i = 0; i < n; i++) {
       coeficientesNewton.add(f[0][i]);
     }
     return coeficientesNewton;
   }
 
-  List<Fraction> _calcularCoeficientesFormaPadrao(List<Fraction> x, List<Fraction> coeficientesNewton) {
+  List<double> _calcularCoeficientesFormaPadraoDouble(List<double> x, List<double> coeficientesNewton) {
     int n = coeficientesNewton.length;
-    List<Fraction> polyResult = List.filled(n, Fraction(0));
-    List<Fraction> termPoly = [Fraction(1)];
+    List<double> polyResult = List.filled(n, 0.0);
+    List<double> termPoly = [1.0];
 
     for (int i = 0; i < n; i++) {
       for (int k = 0; k < termPoly.length; k++) {
-        polyResult[k] = (polyResult[k] + (termPoly[k] * coeficientesNewton[i])).reduce();
+        polyResult[k] += termPoly[k] * coeficientesNewton[i];
       }
       
       if (i < n - 1) {
-        termPoly = _multiplicarPolinomios(termPoly, [(x[i] * Fraction(-1)).reduce(), Fraction(1)]);
+        termPoly = _multiplicarPolinomiosDouble(termPoly, [-x[i], 1.0]);
       }
     }
     return polyResult;
+  }
+
+  Fraction _doubleToFraction(double val) {
+    try {
+      if (val.isNaN || val.isInfinite) {
+        throw Exception("Valor inválido.");
+      }
+      if ((val - val.roundToDouble()).abs() < 1e-11) {
+        return Fraction(val.round());
+      }
+      return Fraction.fromDouble(val);
+    } catch (_) {
+      return Fraction.fromDouble(double.parse(val.toStringAsFixed(6)));
+    }
   }
 
   void _calcular() {
@@ -113,32 +131,38 @@ class _InterpolacaoPolinomialNewtonViewState extends State<InterpolacaoPolinomia
     });
 
     try {
-      List<Fraction> px = [], py = [];
+      List<double> px = [], py = [];
       for (var ctrl in _pontoControllers) {
-        px.add(Fraction.fromString(ctrl.x.text.replaceAll(',', '.')));
-        py.add(Fraction.fromString(ctrl.y.text.replaceAll(',', '.')));
+        px.add(double.parse(ctrl.x.text.replaceAll(',', '.')));
+        py.add(double.parse(ctrl.y.text.replaceAll(',', '.')));
       }
 
-      List<Fraction> coefsNewton = _calcularDiferencasDivididas(px, py);
-      List<Fraction> coefsPadrao = _calcularCoeficientesFormaPadrao(px, coefsNewton);
+      List<double> coefsNewtonDouble = _calcularDiferencasDivididasDouble(px, py);
+      List<double> coefsPadraoDouble = _calcularCoeficientesFormaPadraoDouble(px, coefsNewtonDouble);
 
-      Fraction? valorAvaliado, xAvaliado;
+      double? valorAvaliadoDouble, xAvaliadoDouble;
       if (_pontoAvaliacaoController.text.isNotEmpty) {
-        xAvaliado = Fraction.fromString(_pontoAvaliacaoController.text.replaceAll(',', '.'));
-        valorAvaliado = Fraction(0);
-        for (int i = 0; i < coefsPadrao.length; i++) {
-          valorAvaliado = (valorAvaliado! + (coefsPadrao[i] * _fractionPow(xAvaliado, i))).reduce();
+        xAvaliadoDouble = double.parse(_pontoAvaliacaoController.text.replaceAll(',', '.'));
+        double tempAvaliado = 0.0;
+        for (int i = 0; i < coefsPadraoDouble.length; i++) {
+          tempAvaliado += coefsPadraoDouble[i] * _doublePow(xAvaliadoDouble, i);
         }
+        valorAvaliadoDouble = tempAvaliado;
       }
+
+      List<Fraction> coefsNewtonFraction = coefsNewtonDouble.map((c) => _doubleToFraction(c)).toList();
+      List<Fraction> coefsPadraoFraction = coefsPadraoDouble.map((c) => _doubleToFraction(c)).toList();
+      Fraction? valorAvaliadoFraction = valorAvaliadoDouble != null ? _doubleToFraction(valorAvaliadoDouble) : null;
+      Fraction? xAvaliadoFraction = xAvaliadoDouble != null ? _doubleToFraction(xAvaliadoDouble) : null;
 
       setState(() {
-        _coeficientesNewton = coefsNewton;
-        _coeficientesPadrao = coefsPadrao;
-        _valorAvaliado = valorAvaliado;
-        _xAvaliado = xAvaliado;
+        _coeficientesNewton = coefsNewtonFraction;
+        _coeficientesPadrao = coefsPadraoFraction;
+        _valorAvaliado = valorAvaliadoFraction;
+        _xAvaliado = xAvaliadoFraction;
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: ${e.toString().replaceFirst('Exception: ', '')}')));
     } finally {
       setState(() => _calculating = false);
     }
@@ -251,7 +275,8 @@ class _InterpolacaoPolinomialNewtonViewState extends State<InterpolacaoPolinomia
                                       keyboardType: const TextInputType.numberWithOptions(signed: true, decimal: true),
                                       decoration: InputDecoration(
                                           labelText: 'x${entry.key}',
-                                          border: const OutlineInputBorder()))),
+                                          border: const OutlineInputBorder()),
+                                      validator: (v) => v == null || v.isEmpty ? 'Requerido' : null)),
                               const SizedBox(width: 8),
                               Expanded(
                                   child: TextFormField(
@@ -259,7 +284,8 @@ class _InterpolacaoPolinomialNewtonViewState extends State<InterpolacaoPolinomia
                                       keyboardType: const TextInputType.numberWithOptions(signed: true, decimal: true),
                                       decoration: InputDecoration(
                                           labelText: 'y${entry.key}',
-                                          border: const OutlineInputBorder()))),
+                                          border: const OutlineInputBorder()),
+                                      validator: (v) => v == null || v.isEmpty ? 'Requerido' : null)),
                               if (_pontoControllers.length > 2)
                                 IconButton(
                                     icon: const Icon(Icons.remove_circle_outline,

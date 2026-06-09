@@ -48,50 +48,64 @@ class _MinimosQuadradosViewState extends State<MinimosQuadradosView> {
     }
   }
 
-  Fraction _fractionPow(Fraction base, int exponent) {
-    Fraction result = Fraction(1);
+  double _doublePow(double base, int exponent) {
+    double result = 1.0;
     for (int i = 0; i < exponent; i++) {
-      result = (result * base).reduce();
+      result *= base;
     }
     return result;
   }
 
-  List<Fraction> _resolverSistemaLinear(List<List<Fraction>> A, List<Fraction> b) {
+  List<double> _resolverSistemaLinearDouble(List<List<double>> A, List<double> b) {
     int n = A.length;
-    List<List<Fraction>> M = List.generate(n, (i) => List<Fraction>.from(A[i])..add(b[i]));
+    List<List<double>> M = List.generate(n, (i) => List<double>.from(A[i])..add(b[i]));
 
     for (int i = 0; i < n; i++) {
       int pivot = i;
       for (int j = i + 1; j < n; j++) {
-        if (M[j][i].toDouble().abs() > M[pivot][i].toDouble().abs()) {
+        if (M[j][i].abs() > M[pivot][i].abs()) {
           pivot = j;
         }
       }
-      List<Fraction> temp = M[i];
+      List<double> temp = M[i];
       M[i] = M[pivot];
       M[pivot] = temp;
 
-      if (M[i][i] == Fraction(0)) {
+      if (M[i][i].abs() < 1e-12) {
         throw Exception("Sistema singular ou impossível de resolver com precisão.");
       }
 
       for (int j = i + 1; j < n; j++) {
-        Fraction fator = (M[j][i] / M[i][i]).reduce();
+        double fator = M[j][i] / M[i][i];
         for (int k = i; k <= n; k++) {
-          M[j][k] = (M[j][k] - (fator * M[i][k])).reduce();
+          M[j][k] -= fator * M[i][k];
         }
       }
     }
 
-    List<Fraction> x = List.filled(n, Fraction(0));
+    List<double> x = List.filled(n, 0.0);
     for (int i = n - 1; i >= 0; i--) {
-      Fraction soma = Fraction(0);
+      double soma = 0;
       for (int j = i + 1; j < n; j++) {
-        soma = (soma + (M[i][j] * x[j])).reduce();
+        soma += M[i][j] * x[j];
       }
-      x[i] = ((M[i][n] - soma) / M[i][i]).reduce();
+      x[i] = (M[i][n] - soma) / M[i][i];
     }
     return x;
+  }
+
+  Fraction _doubleToFraction(double val) {
+    try {
+      if (val.isNaN || val.isInfinite) {
+        throw Exception("Valor inválido.");
+      }
+      if ((val - val.roundToDouble()).abs() < 1e-11) {
+        return Fraction(val.round());
+      }
+      return Fraction.fromDouble(val);
+    } catch (_) {
+      return Fraction.fromDouble(double.parse(val.toStringAsFixed(6)));
+    }
   }
 
   void _calcular() {
@@ -106,10 +120,10 @@ class _MinimosQuadradosViewState extends State<MinimosQuadradosView> {
       int m = int.parse(_grauController.text);
       if (m < 0) throw Exception("O grau do polinômio deve ser >= 0.");
       
-      List<Fraction> px = [], py = [];
+      List<double> px = [], py = [];
       for (var ctrl in _pontoControllers) {
-        px.add(Fraction.fromString(ctrl.x.text.replaceAll(',', '.')));
-        py.add(Fraction.fromString(ctrl.y.text.replaceAll(',', '.')));
+        px.add(double.parse(ctrl.x.text.replaceAll(',', '.')));
+        py.add(double.parse(ctrl.y.text.replaceAll(',', '.')));
       }
 
       int n = px.length;
@@ -118,43 +132,48 @@ class _MinimosQuadradosViewState extends State<MinimosQuadradosView> {
       }
 
       // Montando a matriz (m+1) x (m+1) e vetor (m+1)
-      List<List<Fraction>> A = List.generate(m + 1, (i) => List.filled(m + 1, Fraction(0)));
-      List<Fraction> B = List.filled(m + 1, Fraction(0));
+      List<List<double>> A = List.generate(m + 1, (i) => List.filled(m + 1, 0.0));
+      List<double> B = List.filled(m + 1, 0.0);
 
       for (int j = 0; j <= m; j++) {
         for (int k = 0; k <= m; k++) {
-          Fraction soma = Fraction(0);
+          double soma = 0;
           for (int i = 0; i < n; i++) {
-            soma = (soma + _fractionPow(px[i], j + k)).reduce();
+            soma += _doublePow(px[i], j + k);
           }
           A[j][k] = soma;
         }
 
-        Fraction somaB = Fraction(0);
+        double somaB = 0;
         for (int i = 0; i < n; i++) {
-          somaB = (somaB + (_fractionPow(px[i], j) * py[i])).reduce();
+          somaB += _doublePow(px[i], j) * py[i];
         }
         B[j] = somaB;
       }
 
-      List<Fraction> coefs = _resolverSistemaLinear(A, B);
+      List<double> coefsDouble = _resolverSistemaLinearDouble(A, B);
 
-      Fraction? valorAvaliado, xAvaliado;
+      double? valorAvaliadoDouble, xAvaliadoDouble;
       if (_pontoAvaliacaoController.text.isNotEmpty) {
-        xAvaliado = Fraction.fromString(_pontoAvaliacaoController.text.replaceAll(',', '.'));
-        valorAvaliado = Fraction(0);
-        for (int i = 0; i < coefs.length; i++) {
-          valorAvaliado = (valorAvaliado! + (coefs[i] * _fractionPow(xAvaliado, i))).reduce();
+        xAvaliadoDouble = double.parse(_pontoAvaliacaoController.text.replaceAll(',', '.'));
+        double tempAvaliado = 0.0;
+        for (int i = 0; i < coefsDouble.length; i++) {
+          tempAvaliado += coefsDouble[i] * _doublePow(xAvaliadoDouble, i);
         }
+        valorAvaliadoDouble = tempAvaliado;
       }
 
+      List<Fraction> coefsFraction = coefsDouble.map((c) => _doubleToFraction(c)).toList();
+      Fraction? valorAvaliadoFraction = valorAvaliadoDouble != null ? _doubleToFraction(valorAvaliadoDouble) : null;
+      Fraction? xAvaliadoFraction = xAvaliadoDouble != null ? _doubleToFraction(xAvaliadoDouble) : null;
+
       setState(() {
-        _coeficientes = coefs;
-        _valorAvaliado = valorAvaliado;
-        _xAvaliado = xAvaliado;
+        _coeficientes = coefsFraction;
+        _valorAvaliado = valorAvaliadoFraction;
+        _xAvaliado = xAvaliadoFraction;
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: ${e.toString().replaceFirst('Exception: ', '')}')));
     } finally {
       setState(() => _calculating = false);
     }
@@ -267,7 +286,8 @@ class _MinimosQuadradosViewState extends State<MinimosQuadradosView> {
                                       keyboardType: const TextInputType.numberWithOptions(signed: true, decimal: true),
                                       decoration: InputDecoration(
                                           labelText: 'x${entry.key}',
-                                          border: const OutlineInputBorder()))),
+                                          border: const OutlineInputBorder()),
+                                      validator: (v) => v == null || v.isEmpty ? 'Requerido' : null)),
                               const SizedBox(width: 8),
                               Expanded(
                                   child: TextFormField(
@@ -275,7 +295,8 @@ class _MinimosQuadradosViewState extends State<MinimosQuadradosView> {
                                       keyboardType: const TextInputType.numberWithOptions(signed: true, decimal: true),
                                       decoration: InputDecoration(
                                           labelText: 'y${entry.key}',
-                                          border: const OutlineInputBorder()))),
+                                          border: const OutlineInputBorder()),
+                                      validator: (v) => v == null || v.isEmpty ? 'Requerido' : null)),
                               if (_pontoControllers.length > 2)
                                 IconButton(
                                     icon: const Icon(Icons.remove_circle_outline,
@@ -295,7 +316,8 @@ class _MinimosQuadradosViewState extends State<MinimosQuadradosView> {
                           decoration: const InputDecoration(
                               labelText: 'Grau do polinômio de ajuste (m)',
                               border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.stacked_line_chart))),
+                              prefixIcon: Icon(Icons.stacked_line_chart)),
+                          validator: (v) => v == null || v.isEmpty ? 'Requerido' : null),
                       const SizedBox(height: 16),
                       TextFormField(
                           controller: _pontoAvaliacaoController,

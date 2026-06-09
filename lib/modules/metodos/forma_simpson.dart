@@ -160,15 +160,29 @@ class _FormaSimpsonViewState extends State<FormaSimpsonView> {
     if (_pontos.length < 3) throw Exception("São necessários pelo menos 3 pontos.");
     if ((_pontos.length - 1) % 2 != 0) throw Exception("O número de subintervalos (pontos - 1) deve ser par.");
 
-    final funcExpression = _functionController.text;
-    final f = funcExpression.toSingleVariableFunction('x');
+    final funcExpression = _functionController.text.trim();
+    final bool hasFunction = funcExpression.isNotEmpty;
 
     List<Map<String, double>> parsedPoints = [];
-    for (var p in _pontos) {
-      double x = double.parse(p.x.text.replaceAll(',', '.'));
-      double y = f(x).toDouble();
-      p.y.text = y.toStringAsFixed(6);
-      parsedPoints.add({'x': x, 'y': y});
+    if (hasFunction) {
+      final f = funcExpression.toSingleVariableFunction('x');
+      for (var p in _pontos) {
+        double x = double.parse(p.x.text.replaceAll(',', '.'));
+        double y;
+        if (p.y.text.trim().isNotEmpty) {
+          y = double.parse(p.y.text.replaceAll(',', '.'));
+        } else {
+          y = f(x).toDouble();
+          p.y.text = y.toStringAsFixed(6);
+        }
+        parsedPoints.add({'x': x, 'y': y});
+      }
+    } else {
+      for (var p in _pontos) {
+        double x = double.parse(p.x.text.replaceAll(',', '.'));
+        double y = double.parse(p.y.text.replaceAll(',', '.'));
+        parsedPoints.add({'x': x, 'y': y});
+      }
     }
 
     // Ordenar os pontos pelo eixo X
@@ -200,7 +214,7 @@ class _FormaSimpsonViewState extends State<FormaSimpsonView> {
     double integral = (h / 3) * somaTotal;
 
     setState(() {
-      _funcaoStr = funcExpression;
+      _funcaoStr = hasFunction ? funcExpression : null;
       _pontosCalculados = parsedPoints;
       _n = n;
       _h = h; // Para modo pontos, h é a distância entre x_i e x_{i+1}
@@ -340,11 +354,11 @@ class _FormaSimpsonViewState extends State<FormaSimpsonView> {
         const SizedBox(height: 12),
         TextFormField(
           controller: _functionController,
+          onChanged: (v) => setState(() {}),
           decoration: const InputDecoration(
-            labelText: 'f(x) (ex: x^2 + sqrt(x))',
+            labelText: 'f(x) (opcional - usada para calcular y)',
             border: OutlineInputBorder(),
           ),
-          validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
         ),
         const Divider(height: 32),
         Row(
@@ -376,7 +390,7 @@ class _FormaSimpsonViewState extends State<FormaSimpsonView> {
                     controller: p.x,
                     keyboardType: const TextInputType.numberWithOptions(signed: true, decimal: true),
                     decoration: const InputDecoration(labelText: 'x', border: OutlineInputBorder(), isDense: true),
-                    validator: (v) => v!.isEmpty ? '?' : null,
+                    validator: (v) => v == null || v.isEmpty ? '?' : null,
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -384,8 +398,18 @@ class _FormaSimpsonViewState extends State<FormaSimpsonView> {
                   child: TextFormField(
                     controller: p.y,
                     keyboardType: const TextInputType.numberWithOptions(signed: true, decimal: true),
-                    decoration: const InputDecoration(labelText: 'y (auto)', border: OutlineInputBorder(), isDense: true),
-                    readOnly: true,
+                    decoration: InputDecoration(
+                      labelText: _functionController.text.trim().isNotEmpty ? 'y (opcional)' : 'y',
+                      border: const OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                    readOnly: false,
+                    validator: (v) {
+                      if (_functionController.text.trim().isEmpty) {
+                        return v == null || v.isEmpty ? '?' : null;
+                      }
+                      return null;
+                    },
                   ),
                 ),
                 IconButton(
