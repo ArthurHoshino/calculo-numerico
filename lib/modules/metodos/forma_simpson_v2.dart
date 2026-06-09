@@ -51,7 +51,20 @@ class _FormaSimpsonV2ViewState extends State<FormaSimpsonV2View> {
   List<Map<String, double>>? _pontosCalculados;
 
   @override
+  void initState() {
+    super.initState();
+    _functionController.addListener(_onFunctionChanged);
+  }
+
+  void _onFunctionChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  @override
   void dispose() {
+    _functionController.removeListener(_onFunctionChanged);
     _functionController.dispose();
     _limiteAController.dispose();
     _limiteBController.dispose();
@@ -160,15 +173,29 @@ class _FormaSimpsonV2ViewState extends State<FormaSimpsonV2View> {
     if (_pontos.length < 4) throw Exception("São necessários pelo menos 4 pontos para a regra 3/8 de Simpson.");
     if ((_pontos.length - 1) % 3 != 0) throw Exception("O número de subintervalos (pontos - 1) deve ser múltiplo de 3.");
 
-    final funcExpression = _functionController.text;
-    final f = funcExpression.toSingleVariableFunction('x');
+    final funcExpression = _functionController.text.trim();
+    final bool hasFunction = funcExpression.isNotEmpty;
 
     List<Map<String, double>> parsedPoints = [];
-    for (var p in _pontos) {
-      double x = double.parse(p.x.text.replaceAll(',', '.'));
-      double y = f(x).toDouble();
-      p.y.text = y.toStringAsFixed(6);
-      parsedPoints.add({'x': x, 'y': y});
+    if (hasFunction) {
+      final f = funcExpression.toSingleVariableFunction('x');
+      for (var p in _pontos) {
+        double x = double.parse(p.x.text.replaceAll(',', '.'));
+        double y;
+        if (p.y.text.trim().isNotEmpty) {
+          y = double.parse(p.y.text.replaceAll(',', '.'));
+        } else {
+          y = f(x).toDouble();
+          p.y.text = y.toStringAsFixed(6);
+        }
+        parsedPoints.add({'x': x, 'y': y});
+      }
+    } else {
+      for (var p in _pontos) {
+        double x = double.parse(p.x.text.replaceAll(',', '.'));
+        double y = double.parse(p.y.text.replaceAll(',', '.'));
+        parsedPoints.add({'x': x, 'y': y});
+      }
     }
 
     // Ordenar os pontos pelo eixo X
@@ -200,7 +227,7 @@ class _FormaSimpsonV2ViewState extends State<FormaSimpsonV2View> {
     double integral = (3 * h / 8) * somaTotal;
 
     setState(() {
-      _funcaoStr = funcExpression;
+      _funcaoStr = hasFunction ? funcExpression : null;
       _pontosCalculados = parsedPoints;
       _n = n;
       _h = h; // Para modo pontos, h é a distância entre x_i e x_{i+1}
@@ -336,7 +363,7 @@ class _FormaSimpsonV2ViewState extends State<FormaSimpsonV2View> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Função f(x)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        const Text('Função f(x) (Opcional)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         const SizedBox(height: 12),
         TextFormField(
           controller: _functionController,
@@ -344,7 +371,6 @@ class _FormaSimpsonV2ViewState extends State<FormaSimpsonV2View> {
             labelText: 'f(x) (ex: x^2 + sqrt(x))',
             border: OutlineInputBorder(),
           ),
-          validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
         ),
         const Divider(height: 32),
         Row(
@@ -384,8 +410,18 @@ class _FormaSimpsonV2ViewState extends State<FormaSimpsonV2View> {
                   child: TextFormField(
                     controller: p.y,
                     keyboardType: const TextInputType.numberWithOptions(signed: true, decimal: true),
-                    decoration: const InputDecoration(labelText: 'y (auto)', border: OutlineInputBorder(), isDense: true),
-                    readOnly: true,
+                    decoration: InputDecoration(
+                      labelText: _functionController.text.trim().isNotEmpty ? 'y (opcional)' : 'y',
+                      border: const OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                    readOnly: false,
+                    validator: (v) {
+                      if (_functionController.text.trim().isEmpty) {
+                        return v == null || v.isEmpty ? '?' : null;
+                      }
+                      return null;
+                    },
                   ),
                 ),
                 IconButton(
@@ -476,7 +512,7 @@ class _FormaSimpsonV2ViewState extends State<FormaSimpsonV2View> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (_isModoFuncao && _funcaoStr != null) ...[
+                    if (_funcaoStr != null) ...[
                       const Text('Função Integrada:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 12),
                       Container(
@@ -550,11 +586,10 @@ class _FormaSimpsonV2ViewState extends State<FormaSimpsonV2View> {
                         child: Card(
                           clipBehavior: Clip.antiAlias,
                           child: DataTable(
-                            headingRowColor: WidgetStateProperty.all(Colors.blue.shade50),
-                            columns: const [
-                              DataColumn(label: Text('i', style: TextStyle(fontWeight: FontWeight.bold))),
-                              DataColumn(label: Text('x', style: TextStyle(fontWeight: FontWeight.bold))),
-                              DataColumn(label: Text('y = f(x)', style: TextStyle(fontWeight: FontWeight.bold))),
+                            columns: [
+                              const DataColumn(label: Text('i', style: TextStyle(fontWeight: FontWeight.bold))),
+                              const DataColumn(label: Text('x', style: TextStyle(fontWeight: FontWeight.bold))),
+                              DataColumn(label: Text(_funcaoStr != null ? 'y = f(x)' : 'y', style: const TextStyle(fontWeight: FontWeight.bold))),
                             ],
                             rows: _pontosCalculados!.asMap().entries.map((entry) {
                               int i = entry.key;
