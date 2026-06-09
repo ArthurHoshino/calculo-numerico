@@ -47,46 +47,60 @@ class _InterpolacaoPolinomialViewState extends State<InterpolacaoPolinomialView>
     }
   }
 
-  Fraction _fractionPow(Fraction base, int exponent) {
-    Fraction result = Fraction(1);
+  double _doublePow(double base, int exponent) {
+    double result = 1.0;
     for (int i = 0; i < exponent; i++) {
-      result = (result * base).reduce();
+      result *= base;
     }
     return result;
   }
 
-  List<Fraction> _resolverSistema(List<List<Fraction>> matriz, List<Fraction> b) {
+  List<double> _resolverSistemaDouble(List<List<double>> matriz, List<double> b) {
     int n = b.length;
-    for (int i = 0; i < n; i++) matriz[i].add(b[i]);
+    List<List<double>> M = List.generate(n, (i) => List<double>.from(matriz[i])..add(b[i]));
 
     for (int i = 0; i < n; i++) {
       int max = i;
       for (int k = i + 1; k < n; k++) {
-        if (matriz[k][i].toDouble().abs() > matriz[max][i].toDouble().abs()) max = k;
+        if (M[k][i].abs() > M[max][i].abs()) max = k;
       }
-      var temp = matriz[i];
-      matriz[i] = matriz[max];
-      matriz[max] = temp;
+      var temp = M[i];
+      M[i] = M[max];
+      M[max] = temp;
 
-      if (matriz[i][i].toDouble().abs() < 1e-15) continue;
+      if (M[i][i].abs() < 1e-12) continue;
 
       for (int k = i + 1; k < n; k++) {
-        Fraction fator = (matriz[k][i] / matriz[i][i]).reduce();
+        double fator = M[k][i] / M[i][i];
         for (int j = i; j <= n; j++) {
-          matriz[k][j] = (matriz[k][j] - (fator * matriz[i][j])).reduce();
+          M[k][j] -= fator * M[i][j];
         }
       }
     }
 
-    List<Fraction> x = List.filled(n, Fraction(0));
+    List<double> x = List.filled(n, 0.0);
     for (int i = n - 1; i >= 0; i--) {
-      Fraction soma = Fraction(0);
+      double soma = 0.0;
       for (int j = i + 1; j < n; j++) {
-        soma = (soma + (matriz[i][j] * x[j])).reduce();
+        soma += M[i][j] * x[j];
       }
-      x[i] = ((matriz[i][n] - soma) / matriz[i][i]).reduce();
+      x[i] = (M[i][n] - soma) / M[i][i];
     }
     return x;
+  }
+
+  Fraction _doubleToFraction(double val) {
+    try {
+      if (val.isNaN || val.isInfinite) {
+        throw Exception("Valor inválido.");
+      }
+      if ((val - val.roundToDouble()).abs() < 1e-11) {
+        return Fraction(val.round());
+      }
+      return Fraction.fromDouble(val);
+    } catch (_) {
+      return Fraction.fromDouble(double.parse(val.toStringAsFixed(6)));
+    }
   }
 
   void _calcular() {
@@ -98,32 +112,37 @@ class _InterpolacaoPolinomialViewState extends State<InterpolacaoPolinomialView>
     });
 
     try {
-      List<Fraction> px = [], py = [];
+      List<double> px = [], py = [];
       for (var ctrl in _pontoControllers) {
-        px.add(Fraction.fromString(ctrl.x.text.replaceAll(',', '.')));
-        py.add(Fraction.fromString(ctrl.y.text.replaceAll(',', '.')));
+        px.add(double.parse(ctrl.x.text.replaceAll(',', '.')));
+        py.add(double.parse(ctrl.y.text.replaceAll(',', '.')));
       }
 
       int n = px.length;
-      List<List<Fraction>> vandermonde = List.generate(n, (i) => List.generate(n, (j) => _fractionPow(px[i], j)));
-      List<Fraction> coefs = _resolverSistema(vandermonde, py);
+      List<List<double>> vandermonde = List.generate(n, (i) => List.generate(n, (j) => _doublePow(px[i], j)));
+      List<double> coefsDouble = _resolverSistemaDouble(vandermonde, py);
 
-      Fraction? valorAvaliado, xAvaliado;
+      double? valorAvaliadoDouble, xAvaliadoDouble;
       if (_pontoAvaliacaoController.text.isNotEmpty) {
-        xAvaliado = Fraction.fromString(_pontoAvaliacaoController.text.replaceAll(',', '.'));
-        valorAvaliado = Fraction(0);
-        for (int i = 0; i < coefs.length; i++) {
-          valorAvaliado = (valorAvaliado! + (coefs[i] * _fractionPow(xAvaliado, i))).reduce();
+        xAvaliadoDouble = double.parse(_pontoAvaliacaoController.text.replaceAll(',', '.'));
+        double tempAvaliado = 0.0;
+        for (int i = 0; i < coefsDouble.length; i++) {
+          tempAvaliado += coefsDouble[i] * _doublePow(xAvaliadoDouble, i);
         }
+        valorAvaliadoDouble = tempAvaliado;
       }
 
+      List<Fraction> coefsFraction = coefsDouble.map((c) => _doubleToFraction(c)).toList();
+      Fraction? valorAvaliadoFraction = valorAvaliadoDouble != null ? _doubleToFraction(valorAvaliadoDouble) : null;
+      Fraction? xAvaliadoFraction = xAvaliadoDouble != null ? _doubleToFraction(xAvaliadoDouble) : null;
+
       setState(() {
-        _coeficientes = coefs;
-        _valorAvaliado = valorAvaliado;
-        _xAvaliado = xAvaliado;
+        _coeficientes = coefsFraction;
+        _valorAvaliado = valorAvaliadoFraction;
+        _xAvaliado = xAvaliadoFraction;
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: ${e.toString().replaceFirst('Exception: ', '')}')));
     } finally {
       setState(() => _calculating = false);
     }
@@ -223,27 +242,33 @@ class _InterpolacaoPolinomialViewState extends State<InterpolacaoPolinomialView>
                       child: Row(children: [
                         Expanded(child: TextFormField(
                           controller: entry.value.x,
-                          keyboardType: const TextInputType.numberWithOptions(signed: true),
+                          keyboardType: const TextInputType.numberWithOptions(signed: true, decimal: true),
                           decoration: InputDecoration(
                             labelText: 'x${entry.key}',
                             border: const OutlineInputBorder()
-                          )
+                          ),
+                          validator: (v) => v == null || v.isEmpty ? 'Requerido' : null
                         )),
                         const SizedBox(width: 8),
                         Expanded(child: TextFormField(
                           controller: entry.value.y,
-                          keyboardType: const TextInputType.numberWithOptions(signed: true),
+                          keyboardType: const TextInputType.numberWithOptions(signed: true, decimal: true),
                           decoration: InputDecoration(
                             labelText: 'y${entry.key}',
                             border: const OutlineInputBorder()
-                          )
+                          ),
+                          validator: (v) => v == null || v.isEmpty ? 'Requerido' : null
                         )),
                         if (_pontoControllers.length > 2) IconButton(icon: const Icon(Icons.remove_circle_outline, color: Colors.red), onPressed: () => _removePonto(entry.key))
                       ]),
                     )),
                     Center(child: TextButton.icon(onPressed: _addPonto, icon: const Icon(Icons.add), label: const Text('ADICIONAR PONTO'))),
                     const Divider(),
-                    TextFormField(controller: _pontoAvaliacaoController, decoration: const InputDecoration(labelText: 'Valor de x para avaliar', border: OutlineInputBorder(), prefixIcon: Icon(Icons.ads_click))),
+                    TextFormField(
+                      controller: _pontoAvaliacaoController,
+                      keyboardType: const TextInputType.numberWithOptions(signed: true, decimal: true),
+                      decoration: const InputDecoration(labelText: 'Valor de x para avaliar', border: OutlineInputBorder(), prefixIcon: Icon(Icons.ads_click))
+                    ),
                     const SizedBox(height: 16),
                     Row(children: [
                       Expanded(child: OutlinedButton(onPressed: _limpar, child: const Text('LIMPAR'))),

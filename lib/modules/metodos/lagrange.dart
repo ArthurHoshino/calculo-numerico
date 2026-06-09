@@ -47,45 +47,62 @@ class _LagrangeViewState extends State<LagrangeView> {
     }
   }
 
-  Fraction _fractionPow(Fraction base, int exponent) {
-    Fraction result = Fraction(1);
+  double _doublePow(double base, int exponent) {
+    double result = 1.0;
     for (int i = 0; i < exponent; i++) {
-      result = (result * base).reduce();
+      result *= base;
     }
     return result;
   }
 
-  List<Fraction> _multiplicarPolinomios(List<Fraction> p1, List<Fraction> p2) {
-    List<Fraction> result = List.filled(p1.length + p2.length - 1, Fraction(0));
+  List<double> _multiplicarPolinomiosDouble(List<double> p1, List<double> p2) {
+    List<double> result = List.filled(p1.length + p2.length - 1, 0.0);
     for (int i = 0; i < p1.length; i++) {
       for (int j = 0; j < p2.length; j++) {
-        result[i + j] = (result[i + j] + (p1[i] * p2[j])).reduce();
+        result[i + j] += p1[i] * p2[j];
       }
     }
     return result;
   }
 
-  List<Fraction> _calcularCoeficientesLagrange(List<Fraction> px, List<Fraction> py) {
+  List<double> _calcularCoeficientesLagrangeDouble(List<double> px, List<double> py) {
     int n = px.length;
-    List<Fraction> polyResult = List.filled(n, Fraction(0));
+    List<double> polyResult = List.filled(n, 0.0);
 
     for (int i = 0; i < n; i++) {
-      List<Fraction> liPoly = [Fraction(1)];
-      Fraction denominador = Fraction(1);
+      List<double> liPoly = [1.0];
+      double denominador = 1.0;
 
       for (int j = 0; j < n; j++) {
         if (i == j) continue;
-        // Multiplica liPoly por (x - px[j]) -> [-px[j], 1]
-        liPoly = _multiplicarPolinomios(liPoly, [(px[j] * Fraction(-1)).reduce(), Fraction(1)]);
-        denominador = (denominador * (px[i] - px[j])).reduce();
+        liPoly = _multiplicarPolinomiosDouble(liPoly, [-px[j], 1.0]);
+        denominador *= (px[i] - px[j]);
       }
 
-      Fraction fator = (py[i] / denominador).reduce();
+      if (denominador.abs() < 1e-15) {
+        throw Exception("Pontos de X duplicados ou muito próximos encontrados. Não é possível interpolar.");
+      }
+
+      double fator = py[i] / denominador;
       for (int k = 0; k < liPoly.length; k++) {
-        polyResult[k] = (polyResult[k] + (liPoly[k] * fator)).reduce();
+        polyResult[k] += liPoly[k] * fator;
       }
     }
     return polyResult;
+  }
+
+  Fraction _doubleToFraction(double val) {
+    try {
+      if (val.isNaN || val.isInfinite) {
+        throw Exception("Valor inválido.");
+      }
+      if ((val - val.roundToDouble()).abs() < 1e-11) {
+        return Fraction(val.round());
+      }
+      return Fraction.fromDouble(val);
+    } catch (_) {
+      return Fraction.fromDouble(double.parse(val.toStringAsFixed(6)));
+    }
   }
 
   void _calcular() {
@@ -97,30 +114,35 @@ class _LagrangeViewState extends State<LagrangeView> {
     });
 
     try {
-      List<Fraction> px = [], py = [];
+      List<double> px = [], py = [];
       for (var ctrl in _pontoControllers) {
-        px.add(Fraction.fromString(ctrl.x.text.replaceAll(',', '.')));
-        py.add(Fraction.fromString(ctrl.y.text.replaceAll(',', '.')));
+        px.add(double.parse(ctrl.x.text.replaceAll(',', '.')));
+        py.add(double.parse(ctrl.y.text.replaceAll(',', '.')));
       }
 
-      List<Fraction> coefs = _calcularCoeficientesLagrange(px, py);
+      List<double> coefsDouble = _calcularCoeficientesLagrangeDouble(px, py);
 
-      Fraction? valorAvaliado, xAvaliado;
+      double? valorAvaliadoDouble, xAvaliadoDouble;
       if (_pontoAvaliacaoController.text.isNotEmpty) {
-        xAvaliado = Fraction.fromString(_pontoAvaliacaoController.text.replaceAll(',', '.'));
-        valorAvaliado = Fraction(0);
-        for (int i = 0; i < coefs.length; i++) {
-          valorAvaliado = (valorAvaliado! + (coefs[i] * _fractionPow(xAvaliado, i))).reduce();
+        xAvaliadoDouble = double.parse(_pontoAvaliacaoController.text.replaceAll(',', '.'));
+        double tempAvaliado = 0.0;
+        for (int i = 0; i < coefsDouble.length; i++) {
+          tempAvaliado += coefsDouble[i] * _doublePow(xAvaliadoDouble, i);
         }
+        valorAvaliadoDouble = tempAvaliado;
       }
+
+      List<Fraction> coefsFraction = coefsDouble.map((c) => _doubleToFraction(c)).toList();
+      Fraction? valorAvaliadoFraction = valorAvaliadoDouble != null ? _doubleToFraction(valorAvaliadoDouble) : null;
+      Fraction? xAvaliadoFraction = xAvaliadoDouble != null ? _doubleToFraction(xAvaliadoDouble) : null;
 
       setState(() {
-        _coeficientes = coefs;
-        _valorAvaliado = valorAvaliado;
-        _xAvaliado = xAvaliado;
+        _coeficientes = coefsFraction;
+        _valorAvaliado = valorAvaliadoFraction;
+        _xAvaliado = xAvaliadoFraction;
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: ${e.toString().replaceFirst('Exception: ', '')}')));
     } finally {
       setState(() => _calculating = false);
     }
@@ -228,18 +250,20 @@ class _LagrangeViewState extends State<LagrangeView> {
                               Expanded(
                                   child: TextFormField(
                                       controller: entry.value.x,
-                                      keyboardType: const TextInputType.numberWithOptions(signed: true),
+                                      keyboardType: const TextInputType.numberWithOptions(signed: true, decimal: true),
                                       decoration: InputDecoration(
                                           labelText: 'x${entry.key}',
-                                          border: const OutlineInputBorder()))),
+                                          border: const OutlineInputBorder()),
+                                      validator: (v) => v == null || v.isEmpty ? 'Requerido' : null)),
                               const SizedBox(width: 8),
                               Expanded(
                                   child: TextFormField(
                                       controller: entry.value.y,
-                                      keyboardType: const TextInputType.numberWithOptions(signed: true),
+                                      keyboardType: const TextInputType.numberWithOptions(signed: true, decimal: true),
                                       decoration: InputDecoration(
                                           labelText: 'y${entry.key}',
-                                          border: const OutlineInputBorder()))),
+                                          border: const OutlineInputBorder()),
+                                      validator: (v) => v == null || v.isEmpty ? 'Requerido' : null)),
                               if (_pontoControllers.length > 2)
                                 IconButton(
                                     icon: const Icon(Icons.remove_circle_outline,
@@ -255,6 +279,7 @@ class _LagrangeViewState extends State<LagrangeView> {
                       const Divider(),
                       TextFormField(
                           controller: _pontoAvaliacaoController,
+                          keyboardType: const TextInputType.numberWithOptions(signed: true, decimal: true),
                           decoration: const InputDecoration(
                               labelText: 'Valor de x para avaliar',
                               border: OutlineInputBorder(),
